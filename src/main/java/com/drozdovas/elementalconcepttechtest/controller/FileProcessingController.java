@@ -2,6 +2,7 @@ package com.drozdovas.elementalconcepttechtest.controller;
 
 import com.drozdovas.elementalconcepttechtest.model.OutputRecord;
 import com.drozdovas.elementalconcepttechtest.service.FileProcessingService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,9 @@ public class FileProcessingController {
 
     private final FileProcessingService fileProcessingService;
 
+    @Value("${file.validation.skip:false}")
+    private boolean skipValidation;
+
     public FileProcessingController(FileProcessingService fileProcessingService) {
         this.fileProcessingService = fileProcessingService;
     }
@@ -24,7 +28,7 @@ public class FileProcessingController {
     @PostMapping("/process")
     public ResponseEntity<List<OutputRecord>> processFile(@RequestParam("file") MultipartFile file) {
         try {
-            List<OutputRecord> outputRecords = fileProcessingService.processFile(file.getInputStream());
+            List<OutputRecord> outputRecords = fileProcessingService.processFile(file.getInputStream(), skipValidation);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"OutcomeFile.json\"")
                     .body(outputRecords);

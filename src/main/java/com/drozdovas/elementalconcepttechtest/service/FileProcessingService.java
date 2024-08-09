@@ -14,8 +14,18 @@ import java.util.stream.Collectors;
 @Service
 public class FileProcessingService {
 
-    public List<OutputRecord> processFile(InputStream fileStream) throws IOException {
+    private final ValidationService validationService;
+
+    public FileProcessingService(ValidationService validationService) {
+        this.validationService = validationService;
+    }
+
+    public List<OutputRecord> processFile(InputStream fileStream, boolean skipValidation) throws IOException {
         List<InputRecord> inputRecords = parseFile(fileStream);
+
+        if (!skipValidation) {
+            validationService.validateRecords(inputRecords);
+        }
 
         return inputRecords.stream()
                 .map(record -> new OutputRecord(record.getName(), record.getTransport(), record.getTopSpeed()))
