@@ -53,6 +53,14 @@
 			<artifactId>mockito-core</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- WireMock for testing -->
+		<dependency>
+			<groupId>com.github.tomakehurst</groupId>
+			<artifactId>wiremock-jre8-standalone</artifactId>
+			<version>2.31.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

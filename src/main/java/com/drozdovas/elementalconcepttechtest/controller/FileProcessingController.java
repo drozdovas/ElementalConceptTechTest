@@ -2,6 +2,7 @@ package com.drozdovas.elementalconcepttechtest.controller;
 
 import com.drozdovas.elementalconcepttechtest.model.OutputRecord;
 import com.drozdovas.elementalconcepttechtest.service.FileProcessingService;
+import com.drozdovas.elementalconcepttechtest.service.IPValidationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 
@@ -17,23 +19,32 @@ import java.util.List;
 public class FileProcessingController {
 
     private final FileProcessingService fileProcessingService;
+    private final IPValidationService ipValidationService;
 
     @Value("${file.validation.skip:false}")
     private boolean skipValidation;
 
-    public FileProcessingController(FileProcessingService fileProcessingService) {
+    public FileProcessingController(FileProcessingService fileProcessingService,
+                                    IPValidationService ipValidationService) {
         this.fileProcessingService = fileProcessingService;
+        this.ipValidationService = ipValidationService;
     }
 
     @PostMapping("/process")
-    public ResponseEntity<List<OutputRecord>> processFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<List<OutputRecord>> processFile(@RequestParam("file") MultipartFile file, HttpServletRequest request) {
+        String requestIpAddress = request.getRemoteAddr();
+
         try {
+            ipValidationService.validateIp(requestIpAddress);
+
             List<OutputRecord> outputRecords = fileProcessingService.processFile(file.getInputStream(), skipValidation);
+
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"OutcomeFile.json\"")
                     .body(outputRecords);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
+        } catch (RuntimeException | IOException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         }
     }
 }
