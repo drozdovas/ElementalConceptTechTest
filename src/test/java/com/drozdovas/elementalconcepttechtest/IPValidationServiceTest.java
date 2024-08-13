@@ -1,5 +1,6 @@
 package com.drozdovas.elementalconcepttechtest;
 
+import com.drozdovas.elementalconcepttechtest.dto.IpInfo;
 import com.drozdovas.elementalconcepttechtest.service.IPValidationService;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -11,7 +12,8 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WireMockTest(httpPort = 8081)
 @SpringBootTest
@@ -24,48 +26,53 @@ public class IPValidationServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Create the RestTemplate without autowiring the rootUrl
         RestTemplate restTemplate = restTemplateBuilder.build();
-
-        // Pass the rootUrl manually to the service constructor
         ipValidationService = new IPValidationService(restTemplate, "http://localhost:8081");
     }
 
     @Test
-    void validateIp_ipFromBlockedCountry_throwsException() {
+    void validateIp_ipFromBlockedCountry_returns403() {
         // Mock the external API call to ip-api.com for a blocked country (China)
-        WireMock.stubFor(get(urlEqualTo("/json/123.456.789.012")) // Exact URL match
+        WireMock.stubFor(get(urlEqualTo("/json/123.456.789.012"))
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "application/json")
                         .withBody("{ \"country\": \"China\", \"isp\": \"China Telecom\" }")));
 
-        // Assert that an exception is thrown for a blocked country
-        assertThrows(RuntimeException.class, () -> ipValidationService.validateIp("123.456.789.012"),
-                "Access from country China is blocked.");
+        // Validate IP and check response
+        IpInfo ipInfo = ipValidationService.validateIp("123.456.789.012");
+
+        assertEquals(403, ipInfo.getResponseCode());
+        assertTrue(ipInfo.getResponse().contains("Access from country China is blocked."));
     }
 
     @Test
-    void validateIp_ipFromBlockedISP_throwsException() {
+    void validateIp_ipFromBlockedISP_returns403() {
         // Mock the external API call to ip-api.com for a blocked ISP (Amazon)
-        WireMock.stubFor(get(urlEqualTo("/json/123.456.789.012")) // Exact URL match
+        WireMock.stubFor(get(urlEqualTo("/json/123.456.789.012"))
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "application/json")
                         .withBody("{ \"country\": \"United Kingdom\", \"isp\": \"Amazon AWS\" }")));
 
-        // Assert that an exception is thrown for a blocked ISP
-        assertThrows(RuntimeException.class, () -> ipValidationService.validateIp("123.456.789.012"),
-                "Access from ISP Amazon AWS is blocked.");
+        // Validate IP and check response
+        IpInfo ipInfo = ipValidationService.validateIp("123.456.789.012");
+
+        assertEquals(403, ipInfo.getResponseCode());
+        assertTrue(ipInfo.getResponse().contains("Access from ISP Amazon AWS is blocked."));
     }
 
     @Test
-    void validateIp_ipFromAllowedCountryAndISP_doesNotThrowException() {
+    void validateIp_ipFromAllowedCountryAndISP_returns200() {
         // Mock the external API call to ip-api.com for an allowed country and ISP
-        WireMock.stubFor(get(urlEqualTo("/json/123.456.789.012")) // Exact URL match
+        WireMock.stubFor(get(urlEqualTo("/json/123.456.789.012"))
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "application/json")
                         .withBody("{ \"country\": \"United Kingdom\", \"isp\": \"BT\" }")));
 
-        // Assert that no exception is thrown for an allowed country and ISP
-        ipValidationService.validateIp("123.456.789.012");  // Should not throw an exception
+        // Validate IP and check response
+        IpInfo ipInfo = ipValidationService.validateIp("123.456.789.012");
+
+        assertEquals(200, ipInfo.getResponseCode());
+        assertEquals("United Kingdom", ipInfo.getCountry());
+        assertEquals("BT", ipInfo.getIsp());
     }
 }
