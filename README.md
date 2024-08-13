@@ -1,6 +1,7 @@
 To run the project use the following configuration
 
-![image](https://github.com/user-attachments/assets/cd322056-6edc-4ba2-9f93-2d81f413b709)
+![image](https://github.com/user-attachments/assets/30e03e9e-b16c-4b1c-9acc-cc8bbf059a86)
+
 
 To run a file through use Postman with the following setup
 
