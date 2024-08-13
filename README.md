@@ -4,7 +4,7 @@ To run the project use the following configuration
 
 DB Configuration.
 1. Install MySQL
-2. Create DB (CREATE DATABASE file_processing_db;)
+2. CREATE DATABASE file_processing_db;
 3. CREATE TABLE request_logs (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     request_id CHAR(36) NOT NULL,
